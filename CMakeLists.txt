@@ -38,6 +38,9 @@ else()
     else()
         add_executable(TradingDashboard
             ${PROJECT_SOURCES}
+            Candle.h
+            data.csv
+            dataloader.h dataloader.cpp
         )
     endif()
 endif()
