@@ -1,0 +1,15 @@
+# Qt/C++ build files
+
+build/
+*.o
+*.obj
+*.exe
+*.log
+*.user
+*.pro.user
+*.pro.user.*
+*.autosave
+*.moc
+*.qrc.cpp
+*.ui.h
+
