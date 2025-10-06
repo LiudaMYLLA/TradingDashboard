@@ -8,9 +8,9 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
 
-    DataLoader obj("/home/liudmyla-rybak/TradingDashboard/data.csv");
+    DataLoader loader("/home/liudmyla-rybak/TradingDashboard/data.csv");
 
-    std::vector<Candle> result = obj.loadFromCSV();
+    std::vector<Candle> result = loader.loadFromCSV();
 
     for(int i = 0; i < result.size(); i++){
         Candle c = result[i];

@@ -11,13 +11,20 @@ std::vector<Candle> DataLoader::loadFromCSV(){
     std::vector<Candle> vData;
     std::string line;
 
-    std::getline(file, line);
-    bool success = static_cast<bool>(std::getline(file, line)); // spend the header, write the data in the line
-    while(success){
+    if(!std::getline(file, line)){
+        std::cerr << "CSV is empty!\n";
+        return vData;
+    }
+
+    //bool success = static_cast<bool>(std::getline(file, line)); // spend the header, write the data in the line
+    while(std::getline(file, line)){
+        if (line.empty()) continue;
+
         Candle candle;
         std::stringstream ss(line);
         std::string token;
         int counter = 0;
+
         while(std::getline(ss, token, ',')){ // using pattern
             if(counter == 0){
                 candle.data = token;
@@ -60,7 +67,7 @@ std::vector<Candle> DataLoader::loadFromCSV(){
             ++counter;
         }
         vData.push_back(candle);
-        success = static_cast<bool>(std::getline(file, line)); // reading starting from next line
+        //success = static_cast<bool>(std::getline(file, line)); // reading starting from next line
     }
     return vData;
 }
