@@ -42,6 +42,9 @@ else()
             Candle.h
             data.csv
             dataloader.h dataloader.cpp
+            orderbook.json
+            order.h
+            orderbook.h orderbook.cpp
         )
     endif()
 endif()

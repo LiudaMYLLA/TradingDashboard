@@ -3,6 +3,8 @@
 
 #include "dataloader.h"
 #include "Candle.h"
+#include "orderbook.h"
+#include "dataloader.h"
 
 #include <QtCharts/QCandlestickSet>
 #include <QtCharts/QCandlestickSeries>
@@ -20,6 +22,8 @@
 #include <QVBoxLayout>
 #include <QPushButton>
 #include <QHBoxLayout>
+#include <QTableWidget>
+#include <QLabel>
 
 void MainWindow::LoaderDataToCharts(){
     DataLoader loader("/home/liudmyla-rybak/TradingDashboard/data.csv");
@@ -32,15 +36,20 @@ void MainWindow::LoaderDataToCharts(){
 }
 
 void MainWindow::nextCharts(){
-    this->current_index = this->current_index + this->amount_per_one;
+    if(this->current_index + this->amount_per_one < candles.size()){
+        this->current_index = this->current_index + this->amount_per_one;
+        ChartsReflection();
+    }
 }
 
 void MainWindow::prevCharts(){
-    this->current_index = this->current_index - this->amount_per_one;
+    if(this->current_index - this->amount_per_one < candles.size()){
+        this->current_index = this->current_index - this->amount_per_one;
+        ChartsReflection();
+    }
 }
 
 void MainWindow::ChartsReflection(){
-
     // Group of candles objects
     auto *series = new QtCharts::QCandlestickSeries();
     series->setName("here is a title for series");
@@ -107,7 +116,7 @@ void MainWindow::ChartsReflection(){
 
     // Working with main window looking
     QWidget *container = new QWidget();
-    QVBoxLayout *mainLayout = new QVBoxLayout();
+    QVBoxLayout *chartsButtonsLayout = new QVBoxLayout();
 
     QPushButton *nextButton = new QPushButton("Next");
     QPushButton *prevButton = new QPushButton("Previous");
@@ -115,11 +124,57 @@ void MainWindow::ChartsReflection(){
     buttonLauout->addWidget(prevButton);
     buttonLauout->addWidget(nextButton);
 
-    mainLayout->addLayout(buttonLauout);
-    mainLayout->addWidget(chartView);
+    chartsButtonsLayout->addLayout(buttonLauout);
+    chartsButtonsLayout->addWidget(chartView);
 
-    container->setLayout(mainLayout);
+    QTableWidget *bidsTable = new QTableWidget();
+    QTableWidget *asksTable = new QTableWidget();
+
+    QVBoxLayout *bidsTitleTableHolder = new QVBoxLayout();
+    QVBoxLayout *asksTitleTableHolder = new QVBoxLayout();
+    QLabel *titelBids = new QLabel();
+    QLabel *titleAsks = new QLabel();
+    titelBids->setText("Bids");
+    titleAsks->setText("Asks");
+    bidsTitleTableHolder->addWidget(titelBids);
+    bidsTitleTableHolder->addWidget(bidsTable);
+    asksTitleTableHolder->addWidget(titleAsks);
+    asksTitleTableHolder->addWidget(asksTable);
+
+    Orderbook loaderJSON("/home/liudmyla-rybak/TradingDashboard/orderbook.json");
+    loaderJSON.loadFromJSON();
+
+    bidsTable->setColumnCount(2);
+    bidsTable->setRowCount(loaderJSON.bids.size());
+    asksTable->setColumnCount(2);
+    asksTable->setRowCount(loaderJSON.asks.size());
+    // Syntax: QTableWidget::setItem(int row, int column, QTableWidgetItem *item)
+    for(int i = 0; i < loaderJSON.bids.size(); ++i){
+        QString PriceString = QString::number(loaderJSON.bids[i].price);
+        QString VolumeString = QString::number(loaderJSON.bids[i].volume);
+        bidsTable->setItem(i, 0, new QTableWidgetItem(PriceString));
+        bidsTable->setItem(i, 1, new QTableWidgetItem(VolumeString));
+    }
+    for(int j = 0; j < loaderJSON.asks.size(); ++j){
+        asksTable->setItem(j, 0, new QTableWidgetItem(QString::number(loaderJSON.asks[j].price)));
+        asksTable->setItem(j, 1, new QTableWidgetItem(QString::number(loaderJSON.asks[j].volume)));
+    }
+
+    QHBoxLayout *tables = new QHBoxLayout();
+    tables->addLayout(bidsTitleTableHolder);
+    tables->addLayout(asksTitleTableHolder);
+
+
+    QHBoxLayout *chartsTablesLauout = new QHBoxLayout();
+    chartsTablesLauout->addLayout(chartsButtonsLayout);
+    chartsTablesLauout->addLayout(tables);
+
+    container->setLayout(chartsTablesLauout);
     setCentralWidget(container);
+
+    // Connect signals to slots
+    connect(nextButton, &QPushButton::clicked, this, &MainWindow::nextCharts);
+    connect(prevButton, &QPushButton::clicked, this, &MainWindow::prevCharts);
 
 }
 
@@ -152,6 +207,12 @@ MainWindow::~MainWindow()
 // | `QHBoxLayout` | Horizontally (left → right)   |
 // | `QGridLayout` | Like a table (rows & columns) |
 // | `QFormLayout` | Label–input pairs (for forms) |
+
+//                  SIGNALS AND SLOTS
+// connect() is a Qt function that links a signal (like a button click) to a slot (a function that runs when that signal happens).
+// The general syntax (modern Qt5/Qt6 form)
+// connect(sender, &SenderType::signal, receiver, &ReceiverType::slot);
+
 
 
 
