@@ -45,6 +45,7 @@ else()
             orderbook.json
             order.h
             orderbook.h orderbook.cpp
+            strategyma.h strategyma.cpp
         )
     endif()
 endif()

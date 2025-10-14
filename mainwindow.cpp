@@ -32,7 +32,9 @@ void MainWindow::LoaderDataToCharts(){
     if(this->candles.empty()){
         return;
     }
+
     qDebug() << "Total candles loaded:" << candles.size();
+    this->MA.init(this->candles);
 }
 
 void MainWindow::nextCharts(){

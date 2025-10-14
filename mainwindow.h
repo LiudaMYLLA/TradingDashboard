@@ -1,9 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "Candle.h"
+#include "strategyma.h"
+
 #include <QMainWindow>
 #include <vector>
-#include "Candle.h"
 
 #include <QChartView>
 
@@ -30,6 +32,7 @@ public:
 private:
     Ui::MainWindow *ui;
     std::vector<Candle> candles;
+    strategyMA MA;
     int current_index = 0;
     int amount_per_one = 6;
 };
