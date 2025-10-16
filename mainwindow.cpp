@@ -187,6 +187,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     LoaderDataToCharts();
     ChartsReflection();
+
+    // Testing update method with new data
+    Candle newCandle = Candle("2025-10-16", 100, 110, 90, 105, 1200);
+    this->candles.push_back(newCandle);
+    this->MA.update(newCandle);
+
 }
 
 MainWindow::~MainWindow()

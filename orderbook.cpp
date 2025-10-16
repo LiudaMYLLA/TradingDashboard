@@ -1,6 +1,5 @@
 #include "orderbook.h"
 
-#include <iostream>
 #include <nlohmann/json.hpp>
 
 using JSON = nlohmann::json;
