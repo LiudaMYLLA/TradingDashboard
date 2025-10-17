@@ -31,8 +31,9 @@ class strategyMA
     std::vector<std::pair<std::string, double>> MAPeriodFastHistory;
     std::vector<std::pair<std::string, double>> MAPeriodSlowHistory;
 
-    Signal lastSygnal;
+    Candle lastCandle;
 public:
+    Signal lastSygnal;
     strategyMA();
 
     // updating in every new candle appears

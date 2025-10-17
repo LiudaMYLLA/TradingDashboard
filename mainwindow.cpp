@@ -40,21 +40,49 @@ void MainWindow::LoaderDataToCharts(){
 void MainWindow::nextCharts(){
     if(this->current_index + this->amount_per_one < candles.size()){
         this->current_index = this->current_index + this->amount_per_one;
-        ChartsReflection();
+        UpdateChart();
     }
 }
 
 void MainWindow::prevCharts(){
     if(this->current_index - this->amount_per_one < candles.size()){
         this->current_index = this->current_index - this->amount_per_one;
-        ChartsReflection();
+        UpdateChart();
     }
 }
 
-void MainWindow::ChartsReflection(){
+void MainWindow::signalMA(){
+    if(candles.size() >= 50){
+        if(this->signalsMA != nullptr){
+            this->MA.getLastSignal();
+            if(this->MA.lastSygnal == NONE){
+                this->signalsMA->setText("No Signal!");
+            }else if(this->MA.lastSygnal == BUY){
+                this->signalsMA->setText("BUY");
+            }else if(this->MA.lastSygnal == SELL){
+                this->signalsMA->setText("SELL");
+            }else{
+                std::cout << "Here some problems";
+            }
+        }
+    }else{
+        std::cout << "Not enough candles for analyses" << "\n";
+        if(this->signalsMA != nullptr){
+            this->signalsMA->setText("Candles not enough for analyse");
+        }
+    }
+}
+
+void MainWindow::UpdateChart(){
+
+}
+
+void MainWindow::InitUI(){
+    // HERE IS EVERYTHING FOR CHARTS: START
+
     // Group of candles objects
     auto *series = new QtCharts::QCandlestickSeries();
-    series->setName("here is a title for series");
+    series->setName("SERIES");
     series->setDecreasingColor(Qt::red);
     series->setIncreasingColor(Qt::green);
 
@@ -68,7 +96,6 @@ void MainWindow::ChartsReflection(){
             candle.low,
             candle.close
             );
-
         //series saved all candle objects
         series->append(set);
     }
@@ -76,16 +103,15 @@ void MainWindow::ChartsReflection(){
     // Building chart from series
     auto *chart = new QtCharts::QChart();
     chart->addSeries(series);
-    chart->setTitle("Here is a title for chart");
+    chart->setTitle("CHART");
     chart->setBackgroundBrush(QBrush(Qt::lightGray));
-    chart->setTitleBrush(QBrush(Qt::darkMagenta));
 
     // Working with 2 Axes
     auto *priceAxis = new QtCharts::QValueAxis();
     auto *timeAxis = new QtCharts::QBarCategoryAxis();
 
-    priceAxis->setMin(0.0);
-    priceAxis->setMax(300.0);
+    priceAxis->setMin(80.0);
+    priceAxis->setMax(190.0);
     priceAxis->setTitleText("Here is a title for price");
     priceAxis->setTickCount(7);
 
@@ -115,6 +141,10 @@ void MainWindow::ChartsReflection(){
     //auto *dock = new QDockWidget("Charts", this);
     //dock->setWidget(chartView);
     //addDockWidget(Qt::RightDockWidgetArea, dock);
+
+
+    // HERE IS EVERYTHING FOR CHARTS: END
+
 
     // Working with main window looking
     QWidget *container = new QWidget();
@@ -171,12 +201,33 @@ void MainWindow::ChartsReflection(){
     chartsTablesLauout->addLayout(chartsButtonsLayout);
     chartsTablesLauout->addLayout(tables);
 
-    container->setLayout(chartsTablesLauout);
+    QLabel *textMA = new QLabel();
+    textMA->setText("Moving Average Strategy");
+    QPushButton *startAnalyse = new QPushButton("Start Analyse");
+    startAnalyse->setFixedWidth(400);
+
+    this->signalsMA = new QLabel();
+    this->signalsMA->setText("Signals will appear here");
+    this->signalsMA->setStyleSheet("font-weight: bold; color: blue");
+
+    QVBoxLayout *mainContainer = new QVBoxLayout();
+    QVBoxLayout *movingAverageStrategy = new QVBoxLayout();
+
+    movingAverageStrategy->addWidget(textMA);
+    movingAverageStrategy->addWidget(startAnalyse);
+    movingAverageStrategy->addWidget(this->signalsMA);
+
+    mainContainer->addLayout(chartsTablesLauout);
+    mainContainer->addLayout(movingAverageStrategy);
+
+    container->setLayout(mainContainer);
     setCentralWidget(container);
+
 
     // Connect signals to slots
     connect(nextButton, &QPushButton::clicked, this, &MainWindow::nextCharts);
     connect(prevButton, &QPushButton::clicked, this, &MainWindow::prevCharts);
+    connect(startAnalyse, &QPushButton::clicked, this, &MainWindow::signalMA);
 
 }
 
@@ -186,8 +237,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     LoaderDataToCharts();
-    ChartsReflection();
+    InitUI();
 
+    this->MA.getLastSignal();
     // Testing update method with new data
     Candle newCandle = Candle("2025-10-16", 100, 110, 90, 105, 1200);
     this->candles.push_back(newCandle);

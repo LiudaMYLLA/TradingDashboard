@@ -1,11 +1,26 @@
 #include "strategyma.h"
 #include <iostream>
+#include <cmath>
 
+// Moving Average Startegy
 strategyMA::strategyMA() {}
 
 void strategyMA::getLastSignal(){
-    if(this->MAPriodFastLast > this->MAPeriodSlowLast){
-        this->lastSygnal = {BUY};
+    if(this->MAPeriodSlowLast != 0 && this->MAPriodFastLast != 0){
+        int prevLastF = this->MAPeriodFastHistory.size() - 1;
+        int prevLastS = this->MAPeriodSlowHistory.size() - 1;
+        float eps = 0.0001 * this->lastCandle.close;
+        if(this->MAPeriodFastHistory[prevLastF] <= this->MAPeriodSlowHistory[prevLastS]
+            && this->MAPriodFastLast > this->MAPeriodSlowLast){
+            this->lastSygnal = {BUY};
+        }else if(this->MAPeriodFastHistory[prevLastF] >= this->MAPeriodSlowHistory[prevLastS]
+            && this->MAPriodFastLast < this->MAPeriodSlowLast){
+            this->lastSygnal = {SELL};
+        }else if(fabs(this->MAPriodFastLast - this->MAPeriodSlowLast) < eps){
+            this->lastSygnal = {NONE};
+        }
+    }else{
+        this->lastSygnal = {NONE};
     }
 }
 
@@ -32,7 +47,7 @@ void strategyMA::calculate(Candle candle){
 }
 
 void strategyMA::update(Candle newCandle){
-
+    this->lastCandle = newCandle;
     if(this->periodFast.size() >= this->pF){
         this->sumPeriodFast -= this->periodFast.front();
         this->periodFast.pop_front();
@@ -50,12 +65,12 @@ void strategyMA::update(Candle newCandle){
     this->sumPeriodSlow += newCandle.close;
 
     if(this->periodFast.size() == this->pF && this->periodSlow.size() == this->pS){
-        calculate(newCandle);
+        calculate(this->lastCandle);
     }
 }
 
 void strategyMA::init(std::vector<Candle> candles){
-    Candle lastCandle = candles.back();
+    this->lastCandle = candles.back();
 
     int startS;
 
@@ -86,7 +101,7 @@ void strategyMA::init(std::vector<Candle> candles){
     }
 
     if(this->periodFast.size() == this->pF && this->periodSlow.size() == this->pS){
-        calculate(lastCandle);
+        calculate(this->lastCandle);
     }
 }
 

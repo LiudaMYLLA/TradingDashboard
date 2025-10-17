@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <QChartView>
+#include <QLabel>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -23,10 +24,12 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    void ChartsReflection();
+    void InitUI();
+    void UpdateChart();
     void LoaderDataToCharts();
     void nextCharts();
     void prevCharts();
+    void signalMA();
     ~MainWindow();
 
 private:
@@ -35,5 +38,7 @@ private:
     strategyMA MA;
     int current_index = 0;
     int amount_per_one = 6;
+
+    QLabel *signalsMA = nullptr;
 };
 #endif // MAINWINDOW_H
