@@ -7,24 +7,49 @@ strategyMA::strategyMA() {}
 
 void strategyMA::getLastSignal(){
     if(this->MAPeriodSlowLast != 0 && this->MAPriodFastLast != 0){
-        int prevLastF = this->MAPeriodFastHistory.size() - 1;
-        int prevLastS = this->MAPeriodSlowHistory.size() - 1;
-        float eps = 0.0001 * this->lastCandle.close;
-        if(this->MAPeriodFastHistory[prevLastF] <= this->MAPeriodSlowHistory[prevLastS]
-            && this->MAPriodFastLast > this->MAPeriodSlowLast){
-            this->lastSygnal = {BUY};
-        }else if(this->MAPeriodFastHistory[prevLastF] >= this->MAPeriodSlowHistory[prevLastS]
-            && this->MAPriodFastLast < this->MAPeriodSlowLast){
-            this->lastSygnal = {SELL};
-        }else if(fabs(this->MAPriodFastLast - this->MAPeriodSlowLast) < eps){
-            this->lastSygnal = {NONE};
+        if(this->MAPeriodFastHistory.size() >= 2 && this->MAPeriodSlowHistory.size() >= 2){
+            lastSygnal = NONE;
+
+            int prevLastF = this->MAPeriodFastHistory.size() - 2;
+            std::cout << "prevLastF: " << prevLastF << "\n";
+
+            int prevLastS = this->MAPeriodSlowHistory.size() - 2;
+            std::cout << "prevLastS: " << prevLastS << "\n";
+
+            float eps = 0.0001 * this->currentCandle.close;
+            std::cout << "eps: " << eps << "\n";
+
+            if(this->MAPeriodFastHistory[prevLastF].second <= this->MAPeriodSlowHistory[prevLastS].second
+                && this->MAPriodFastLast > this->MAPeriodSlowLast){
+
+                this->lastSygnal = BUY;
+                std::cout << "lastSygnal" << this->lastSygnal << "\n";
+
+            }else if(this->MAPeriodFastHistory[prevLastF].second >= this->MAPeriodSlowHistory[prevLastS].second
+                       && this->MAPriodFastLast < this->MAPeriodSlowLast){
+
+                this->lastSygnal = SELL;
+                std::cout << "lastSygnal" << this->lastSygnal << "\n";
+
+            }else if(fabs(this->MAPriodFastLast - this->MAPeriodSlowLast) < eps){
+
+                this->lastSygnal = NONE;
+                std::cout << "lastSygnal" << this->lastSygnal << "\n";
+
+            }else{
+                std::cout << "NO BUY, NO SELL, NO NONE!" << "\n";
+            }
+        }else{
+            this->lastSygnal = NONE;
+            std::cout << "The history size to small to have calculations" << "\n";
         }
     }else{
-        this->lastSygnal = {NONE};
+        this->lastSygnal = NONE;
     }
 }
 
 void strategyMA::calculate(Candle candle){
+    this->currentCandle = candle;
     if(this->periodFast.size() == this->pF && this->periodSlow.size() == this->pS){
         this->MAPriodFastLast = this->sumPeriodFast / this->pF;
         this->MAPeriodSlowLast = this->sumPeriodSlow / this->pS;
@@ -47,17 +72,15 @@ void strategyMA::calculate(Candle candle){
 }
 
 void strategyMA::update(Candle newCandle){
-    this->lastCandle = newCandle;
+
     if(this->periodFast.size() >= this->pF){
         this->sumPeriodFast -= this->periodFast.front();
         this->periodFast.pop_front();
     }
-
     if(this->periodSlow.size() >= this->pS){
         this->sumPeriodSlow -= this->periodSlow.front();
         this->periodSlow.pop_front();
     }
-
     this->periodFast.push_back(newCandle.close);
     this->periodSlow.push_back(newCandle.close);
 
@@ -65,44 +88,46 @@ void strategyMA::update(Candle newCandle){
     this->sumPeriodSlow += newCandle.close;
 
     if(this->periodFast.size() == this->pF && this->periodSlow.size() == this->pS){
-        calculate(this->lastCandle);
+        calculate(newCandle);
     }
 }
-
 void strategyMA::init(std::vector<Candle> candles){
-    this->lastCandle = candles.back();
-
-    int startS;
-
-    if(candles.size() < this->pS){
-        startS = 0;
-    }else{
-        startS = candles.size() - this->pS;
+    if (candles.empty()) {
+        std::cout << "strategyMA::init: no candles\n";
+        return;
     }
 
-    for (int i = startS; i < candles.size(); ++i){
-        double closePrice = candles[i].close;
+    for (int i = 0; i < candles.size(); ++i){
+
+        const Candle &c = candles[i];
+        double closePrice = c.close;
+
+        // Add to slow
         this->periodSlow.push_back(closePrice);
         this->sumPeriodSlow += closePrice;
-    }
 
-    int startF;
-
-    if(candles.size() < this->pF){
-        startF = 0;
-    }else{
-        startF = candles.size() - this->pF;
-    }
-
-    for (int j = startF; j < candles.size(); ++j){
-        double closePrice = candles[j].close;
+        if(this->periodSlow.size() > this->pS){
+            this->sumPeriodSlow -= this->periodSlow.front();
+            this->periodSlow.pop_front();
+        }
+        // Add to fast
         this->periodFast.push_back(closePrice);
         this->sumPeriodFast += closePrice;
+
+        if(this->periodFast.size() > this->pF){
+            this->sumPeriodFast -= this->periodFast.front();
+            this->periodFast.pop_front();
+        }
+        if(this->periodFast.size() == this->pF && this->periodSlow.size() == this->pS){
+            calculate(c);
+            this->getLastSignal();
+        }
+
     }
 
-    if(this->periodFast.size() == this->pF && this->periodSlow.size() == this->pS){
-        calculate(this->lastCandle);
-    }
+    std::cout << "strategyMA::init completed. Fast history: "
+    << MAPeriodFastHistory.size() << ", Slow history: "
+    << MAPeriodSlowHistory.size() << "\n";
 }
 
 

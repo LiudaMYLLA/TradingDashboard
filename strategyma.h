@@ -7,8 +7,10 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <QDateTime>
 
 enum Signal{
+    INIT,
     NONE,
     BUY,
     SELL
@@ -22,18 +24,15 @@ class strategyMA
     double sumPeriodFast = 0.0;
     double sumPeriodSlow = 0.0;
 
-    int pF = 20;
-    int pS = 50;
-
+    int pF = 3;
+    int pS = 5;
+    Candle currentCandle;
+public:
+    Signal lastSygnal = INIT;
     double MAPriodFastLast = 0.0;
     double MAPeriodSlowLast = 0.0;
-
     std::vector<std::pair<std::string, double>> MAPeriodFastHistory;
     std::vector<std::pair<std::string, double>> MAPeriodSlowHistory;
-
-    Candle lastCandle;
-public:
-    Signal lastSygnal;
     strategyMA();
 
     // updating in every new candle appears

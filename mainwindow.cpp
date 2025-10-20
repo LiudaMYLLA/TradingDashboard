@@ -6,15 +6,6 @@
 #include "orderbook.h"
 #include "dataloader.h"
 
-#include <QtCharts/QCandlestickSet>
-#include <QtCharts/QCandlestickSeries>
-#include <QtCharts/QChart>
-#include <QtCharts/QChartView>
-
-#include <QtCharts/QValueAxis>
-#include <QtCharts/QDateTimeAxis>
-#include <QtCharts/QBarCategoryAxis>
-
 #include <QDateTime>
 #include <QDebug>
 #include <QDockWidget>
@@ -33,7 +24,6 @@ void MainWindow::LoaderDataToCharts(){
         return;
     }
 
-    qDebug() << "Total candles loaded:" << candles.size();
     this->MA.init(this->candles);
 }
 
@@ -45,7 +35,7 @@ void MainWindow::nextCharts(){
 }
 
 void MainWindow::prevCharts(){
-    if(this->current_index - this->amount_per_one < candles.size()){
+    if(this->current_index >= this->amount_per_one){
         this->current_index = this->current_index - this->amount_per_one;
         UpdateChart();
     }
@@ -62,7 +52,7 @@ void MainWindow::signalMA(){
             }else if(this->MA.lastSygnal == SELL){
                 this->signalsMA->setText("SELL");
             }else{
-                std::cout << "Here some problems";
+                std::cout << "Here some problems" << "\n";
             }
         }
     }else{
@@ -74,20 +64,15 @@ void MainWindow::signalMA(){
 }
 
 void MainWindow::UpdateChart(){
+    this->series->clear();
+    this->fastMASeries->clear();
+    this->slowMASeries->clear();
+    this->timeAxis->clear();
 
-}
+    for (int i = current_index;
+        i < current_index + amount_per_one &&
+        i < candles.size(); ++i){
 
-void MainWindow::InitUI(){
-    // HERE IS EVERYTHING FOR CHARTS: START
-
-    // Group of candles objects
-    auto *series = new QtCharts::QCandlestickSeries();
-    series->setName("SERIES");
-    series->setDecreasingColor(Qt::red);
-    series->setIncreasingColor(Qt::green);
-
-
-    for (int i = current_index; i < current_index + amount_per_one && i < candles.size(); ++i){
         const Candle &candle = candles[i];
             // transform every candle to normall objectscandles[i];
         auto *set = new QtCharts::QCandlestickSet(
@@ -97,56 +82,108 @@ void MainWindow::InitUI(){
             candle.close
             );
         //series saved all candle objects
-        series->append(set);
+        //QCandlestickSeries object
+        this->series->append(set);
+
+        QString candleTime = QString::fromStdString(candle.data);
+        int candlePos = i - current_index;
+        //              0 - 0   while 6 charts per page
+        //              1 - 0
+        //              2 - 0
+        //               ...
+        //              5 - 0
+        //              6 - 0
+
+        //              7 - 6 = 1
+        //              8 - 6 = 2
+        //              9 - 6 = 3
+        //              10- 6 = 4
+        //              11 -6 = 5
+        //              12 -6 = 6
+
+        for(const auto& entry: this->MA.MAPeriodFastHistory){
+            if(QString::fromStdString(entry.first) == candleTime){
+                //QLineSeries object    2p: x-pos on chart, y-MAMeaning
+                this->fastMASeries->append(candlePos, entry.second);
+                break;
+            }
+        }
+
+        for (const auto &entry : this->MA.MAPeriodSlowHistory) {
+            if (QString::fromStdString(entry.first) == candleTime) {
+                this->slowMASeries->append(candlePos, entry.second);
+                break;
+            }
+        }
     }
+
+    QStringList categoriesC;
+    for (int j = current_index;
+        j < current_index + amount_per_one && j < candles.size();
+        ++j){
+        const Candle &c = candles[j];
+        categoriesC << QString::fromStdString(c.data);
+    }
+
+    this->timeAxis->append(categoriesC);
+    this->timeAxis->setRange(categoriesC.first(), categoriesC.last());
+
+}
+
+void MainWindow::InitUI(){
+    // HERE IS EVERYTHING FOR CHARTS: START
+    // Group of candles objects
+    this->series = new QtCharts::QCandlestickSeries();
+    this->series->setName("SERIES");
+    this->series->setDecreasingColor(Qt::red);
+    this->series->setIncreasingColor(Qt::green);
 
     // Building chart from series
-    auto *chart = new QtCharts::QChart();
-    chart->addSeries(series);
-    chart->setTitle("CHART");
-    chart->setBackgroundBrush(QBrush(Qt::lightGray));
+    this->chart = new QtCharts::QChart();
+    this->chart->addSeries(series);
+    this->chart->setTitle("CHART");
+    this->chart->setBackgroundBrush(QBrush(Qt::lightGray));
 
     // Working with 2 Axes
-    auto *priceAxis = new QtCharts::QValueAxis();
-    auto *timeAxis = new QtCharts::QBarCategoryAxis();
+    this->priceAxis = new QtCharts::QValueAxis();
+    this->timeAxis = new QtCharts::QBarCategoryAxis();
+    this->priceAxis->setMin(80.0);
+    this->priceAxis->setMax(200.0);
+    this->priceAxis->setTitleText("PRICE");
+    this->priceAxis->setTickCount(7);
+    this->timeAxis->setTitleText("TIME");
 
-    priceAxis->setMin(80.0);
-    priceAxis->setMax(190.0);
-    priceAxis->setTitleText("Here is a title for price");
-    priceAxis->setTickCount(7);
+    this->chart->addAxis(priceAxis, Qt::AlignLeft);
+    this->chart->addAxis(timeAxis, Qt::AlignBottom);
+    this->series->attachAxis(priceAxis);
+    this->series->attachAxis(timeAxis);
 
-    timeAxis->setTitleText("Here is a title for time");
-    QStringList categories;
-    for (int j = current_index; j < current_index + amount_per_one && j < candles.size(); ++j){
-        const Candle &c = candles[j];
-        categories << QString::fromStdString(c.data);
-    }
+    // MA strategy lines
+    this->fastMASeries = new QtCharts::QLineSeries();
+    this->slowMASeries = new QtCharts::QLineSeries();
+    this->fastMASeries->setName("Fast MA");
+    this->slowMASeries->setName("Slow MA");
+    QPen fastPen(Qt::blue);
+    fastPen.setWidth(3);
+    this->fastMASeries->setPen(fastPen);
+    QPen slowPen(Qt::darkYellow);
+    slowPen.setWidth(3);
+    this->slowMASeries->setPen(slowPen);
 
-    timeAxis->append(categories);
-    timeAxis->setRange(categories.first(), categories.last());
+    this->chart->addSeries(this->fastMASeries);
+    this->chart->addSeries(this->slowMASeries);
 
-    chart->addAxis(priceAxis, Qt::AlignLeft);
-    chart->addAxis(timeAxis, Qt::AlignBottom);
-    series->attachAxis(priceAxis);
-    series->attachAxis(timeAxis);
-    //series->clear();
+    this->fastMASeries->attachAxis(this->priceAxis);
+    this->slowMASeries->attachAxis(this->priceAxis);
+    this->fastMASeries->attachAxis(this->timeAxis);
+    this->slowMASeries->attachAxis(this->timeAxis);
 
     // Building final chart
-    auto *chartView = new QtCharts::QChartView(chart);
-    //setCentralWidget(chartView);
-    chartView->setDragMode(QGraphicsView::ScrollHandDrag);
+    this->chartView = new QtCharts::QChartView(chart);
+    this->chartView->setDragMode(QGraphicsView::ScrollHandDrag);
     //chartView->setFixedSize(800,800);
-
-    // Work with docks
-    //auto *dock = new QDockWidget("Charts", this);
-    //dock->setWidget(chartView);
-    //addDockWidget(Qt::RightDockWidgetArea, dock);
-
-
     // HERE IS EVERYTHING FOR CHARTS: END
 
-
-    // Working with main window looking
     QWidget *container = new QWidget();
     QVBoxLayout *chartsButtonsLayout = new QVBoxLayout();
 
@@ -202,7 +239,7 @@ void MainWindow::InitUI(){
     chartsTablesLauout->addLayout(tables);
 
     QLabel *textMA = new QLabel();
-    textMA->setText("Moving Average Strategy");
+    textMA->setText("Crossover Strategy");
     QPushButton *startAnalyse = new QPushButton("Start Analyse");
     startAnalyse->setFixedWidth(400);
 
@@ -223,7 +260,6 @@ void MainWindow::InitUI(){
     container->setLayout(mainContainer);
     setCentralWidget(container);
 
-
     // Connect signals to slots
     connect(nextButton, &QPushButton::clicked, this, &MainWindow::nextCharts);
     connect(prevButton, &QPushButton::clicked, this, &MainWindow::prevCharts);
@@ -236,15 +272,14 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    LoaderDataToCharts();
     InitUI();
-
+    this->MA.init(this->candles);
     this->MA.getLastSignal();
-    // Testing update method with new data
-    Candle newCandle = Candle("2025-10-16", 100, 110, 90, 105, 1200);
-    this->candles.push_back(newCandle);
-    this->MA.update(newCandle);
 
+    LoaderDataToCharts();
+    UpdateChart();
+
+    // Testing Update
 }
 
 MainWindow::~MainWindow()
