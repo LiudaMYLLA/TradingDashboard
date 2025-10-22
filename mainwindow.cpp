@@ -267,8 +267,34 @@ void MainWindow::InitUI(){
     movingAverageStrategy->addWidget(startAnalyse);
     movingAverageStrategy->addWidget(this->signalsMA);
 
+    QVBoxLayout *returnAndVolatilityLayout = new QVBoxLayout();
+    QLabel *returnLabel = new QLabel();
+    QLabel *volatilityLabel = new QLabel();
+    returnLabel->setText("Return: ");
+    volatilityLabel->setText("Volatility: ");
+
+    QPushButton *calculateReturn = new QPushButton("Calculate Return");
+    calculateReturn->setFixedWidth(400);
+    QPushButton *calculateVolatility = new QPushButton("Calculate Volatility");
+    calculateVolatility->setFixedWidth(400);
+
+    QHBoxLayout *buttonsRV = new QHBoxLayout();
+    buttonsRV->addWidget(calculateReturn);
+    buttonsRV->addWidget(calculateVolatility);
+    buttonsRV->setAlignment(Qt::AlignLeft);
+    buttonsRV->setContentsMargins(0, 0, 0, 0);
+
+    QWidget *buttonsRVContainer = new QWidget();
+    buttonsRVContainer->setLayout(buttonsRV);
+    buttonsRVContainer->setFixedWidth(900);
+
+    returnAndVolatilityLayout->addWidget(returnLabel);
+    returnAndVolatilityLayout->addWidget(volatilityLabel);
+    returnAndVolatilityLayout->addWidget(buttonsRVContainer, 0, Qt::AlignLeft);
+
     mainContainer->addLayout(chartsTablesLauout);
     mainContainer->addLayout(movingAverageStrategy);
+    mainContainer->addLayout(returnAndVolatilityLayout);
 
     container->setLayout(mainContainer);
     setCentralWidget(container);
