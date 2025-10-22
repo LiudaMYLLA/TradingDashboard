@@ -45,9 +45,9 @@ private:
     strategyMA MA;
 
     int current_index = 0;
-    int amount_per_one = 8;
+    int amount_per_one = 7;
 private:
-    QtCharts::QCandlestickSeries* series = nullptr;
+    QtCharts::QCandlestickSeries* CandlesSeries = nullptr;
     QtCharts::QChart* chart = nullptr;
     QtCharts::QValueAxis* priceAxis = nullptr;
     QtCharts::QBarCategoryAxis* timeAxis = nullptr;

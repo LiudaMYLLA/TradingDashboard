@@ -23,8 +23,6 @@ void MainWindow::LoaderDataToCharts(){
     if(this->candles.empty()){
         return;
     }
-
-    this->MA.init(this->candles);
 }
 
 void MainWindow::nextCharts(){
@@ -64,13 +62,13 @@ void MainWindow::signalMA(){
 }
 
 void MainWindow::UpdateChart(){
-    this->series->clear();
+    this->CandlesSeries->clear();
     this->fastMASeries->clear();
     this->slowMASeries->clear();
     this->timeAxis->clear();
 
     for (int i = current_index;
-        i < current_index + amount_per_one &&
+        i < current_index + amount_per_one&&
         i < candles.size(); ++i){
 
         const Candle &candle = candles[i];
@@ -83,43 +81,44 @@ void MainWindow::UpdateChart(){
             );
         //series saved all candle objects
         //QCandlestickSeries object
-        this->series->append(set);
+        this->CandlesSeries->append(set);
+    }
 
-        QString candleTime = QString::fromStdString(candle.data);
-        int candlePos = i - current_index;
+    for(int i = current_index; i < current_index + amount_per_one && i < candles.size(); ++i){
+        QString candleTime = QString::fromStdString(candles[i].data);
+
+        for(const auto& entry: this->MA.MAPeriodFastHistory){
+            if(QString::fromStdString(entry.first) == candleTime){
+                int candlePos = i - current_index;
+                //QLineSeries object    2p: x-pos on chart, y-MAMeaning
+                this->fastMASeries->append(candlePos, entry.second);
+                break;
+            }
+        }
+        for(const auto& entry: this->MA.MAPeriodSlowHistory){
+            if(QString::fromStdString(entry.first) == candleTime){
+                int candlePos = i - current_index;
+                this->slowMASeries->append(candlePos, entry.second);
+                break;
+            }
+        }
         //              0 - 0   while 6 charts per page
         //              1 - 0
         //              2 - 0
         //               ...
         //              5 - 0
         //              6 - 0
-
         //              7 - 6 = 1
         //              8 - 6 = 2
         //              9 - 6 = 3
         //              10- 6 = 4
         //              11 -6 = 5
         //              12 -6 = 6
-
-        for(const auto& entry: this->MA.MAPeriodFastHistory){
-            if(QString::fromStdString(entry.first) == candleTime){
-                //QLineSeries object    2p: x-pos on chart, y-MAMeaning
-                this->fastMASeries->append(candlePos, entry.second);
-                break;
-            }
-        }
-
-        for (const auto &entry : this->MA.MAPeriodSlowHistory) {
-            if (QString::fromStdString(entry.first) == candleTime) {
-                this->slowMASeries->append(candlePos, entry.second);
-                break;
-            }
-        }
     }
 
     QStringList categoriesC;
     for (int j = current_index;
-        j < current_index + amount_per_one && j < candles.size();
+        j < current_index + amount_per_one&& j < candles.size();
         ++j){
         const Candle &c = candles[j];
         categoriesC << QString::fromStdString(c.data);
@@ -127,36 +126,50 @@ void MainWindow::UpdateChart(){
 
     this->timeAxis->append(categoriesC);
     this->timeAxis->setRange(categoriesC.first(), categoriesC.last());
-
 }
 
 void MainWindow::InitUI(){
     // HERE IS EVERYTHING FOR CHARTS: START
     // Group of candles objects
-    this->series = new QtCharts::QCandlestickSeries();
-    this->series->setName("SERIES");
-    this->series->setDecreasingColor(Qt::red);
-    this->series->setIncreasingColor(Qt::green);
+    this->CandlesSeries = new QtCharts::QCandlestickSeries();
+    this->CandlesSeries ->setName("Candles");
+    this->CandlesSeries ->setDecreasingColor(Qt::red);
+    this->CandlesSeries ->setIncreasingColor(Qt::green);
 
     // Building chart from series
     this->chart = new QtCharts::QChart();
-    this->chart->addSeries(series);
+    this->chart->addSeries(CandlesSeries);
     this->chart->setTitle("CHART");
     this->chart->setBackgroundBrush(QBrush(Qt::lightGray));
 
     // Working with 2 Axes
     this->priceAxis = new QtCharts::QValueAxis();
     this->timeAxis = new QtCharts::QBarCategoryAxis();
-    this->priceAxis->setMin(80.0);
-    this->priceAxis->setMax(200.0);
+
+    double cLowMin = 0;
+    double cHighMax = 0;
+    for(int i = 0; i < candles.size(); ++i){
+        const Candle& c = candles[i];
+        double cHigh = c.high;
+        double cLow = c.low;
+        if(i == 0){
+            cHighMax = cHigh;
+            cLowMin = cLow;
+        }else{
+            if(cHigh > cHighMax) cHighMax = cHigh;
+            if(cLow < cLowMin) cLowMin = cLow;
+        }
+    }
+    this->priceAxis->setMin(cLowMin);
+    this->priceAxis->setMax(cHighMax);
     this->priceAxis->setTitleText("PRICE");
     this->priceAxis->setTickCount(7);
     this->timeAxis->setTitleText("TIME");
 
     this->chart->addAxis(priceAxis, Qt::AlignLeft);
     this->chart->addAxis(timeAxis, Qt::AlignBottom);
-    this->series->attachAxis(priceAxis);
-    this->series->attachAxis(timeAxis);
+    this->CandlesSeries->attachAxis(priceAxis);
+    this->CandlesSeries->attachAxis(timeAxis);
 
     // MA strategy lines
     this->fastMASeries = new QtCharts::QLineSeries();
@@ -193,8 +206,8 @@ void MainWindow::InitUI(){
     buttonLauout->addWidget(prevButton);
     buttonLauout->addWidget(nextButton);
 
-    chartsButtonsLayout->addLayout(buttonLauout);
     chartsButtonsLayout->addWidget(chartView);
+    chartsButtonsLayout->addLayout(buttonLauout);
 
     QTableWidget *bidsTable = new QTableWidget();
     QTableWidget *asksTable = new QTableWidget();
@@ -272,14 +285,10 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    LoaderDataToCharts();
     InitUI();
     this->MA.init(this->candles);
-    this->MA.getLastSignal();
-
-    LoaderDataToCharts();
     UpdateChart();
-
-    // Testing Update
 }
 
 MainWindow::~MainWindow()

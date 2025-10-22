@@ -20,14 +20,12 @@ class strategyMA
 {
     std::deque<double> periodFast;
     std::deque<double> periodSlow;
-
     double sumPeriodFast = 0.0;
     double sumPeriodSlow = 0.0;
-
-    int pF = 3;
-    int pS = 5;
     Candle currentCandle;
 public:
+    int pF = 7;
+    int pS = 25;
     Signal lastSygnal = INIT;
     double MAPriodFastLast = 0.0;
     double MAPeriodSlowLast = 0.0;
@@ -38,7 +36,8 @@ public:
     // updating in every new candle appears
     void update(Candle newCandle);
 
-    void calculate(Candle candle);
+    void calculateFast(Candle candle);
+    void calculateSlow(Candle candle);
     void getLastSignal();
 
     // getting candles initially
