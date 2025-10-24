@@ -2,7 +2,7 @@
 #include "./ui_mainwindow.h"
 
 #include "dataloader.h"
-#include "Candle.h"
+#include "candle.h"
 #include "orderbook.h"
 #include "dataloader.h"
 
@@ -23,6 +23,29 @@ void MainWindow::LoaderDataToCharts(){
     if(this->candles.empty()){
         return;
     }
+}
+
+void MainWindow::reflectReturn(){
+    // Good works with state massive with new Candles realize func update!
+    std::vector<double> data = this->resultR;
+    double last = data.back();
+
+    double prevLastIndex = data.size() - 1;
+    double prevLast = data[prevLastIndex];
+
+    double prevPrevLastIndex = data.size() - 2;
+    double prevPrevLast = data[prevPrevLastIndex];
+
+    this->reflectR->setText("data for 3 last candles: " + QString::number(last)+ ", "+
+        QString::number(prevLast)+ ", "+
+        QString::number(prevPrevLast));
+}
+
+void MainWindow::reflectVolatility(){
+    // Good works with state massive with new Candles realize func update!
+    double data = this->resultV;
+    this->reflectV->setText(QString::number(data));
+    // Logic for adding the data to the metrix.txt
 }
 
 void MainWindow::nextCharts(){
@@ -268,10 +291,23 @@ void MainWindow::InitUI(){
     movingAverageStrategy->addWidget(this->signalsMA);
 
     QVBoxLayout *returnAndVolatilityLayout = new QVBoxLayout();
+
     QLabel *returnLabel = new QLabel();
     QLabel *volatilityLabel = new QLabel();
     returnLabel->setText("Return: ");
     volatilityLabel->setText("Volatility: ");
+    this->reflectR = new QLabel();
+    this->reflectV = new QLabel();
+
+    QHBoxLayout* volLayout = new QHBoxLayout();
+    volLayout->addWidget(volatilityLabel);
+    volLayout->addWidget(this->reflectV);
+    volLayout->setAlignment(Qt::AlignLeft);
+
+    QHBoxLayout* retLayout = new QHBoxLayout();
+    retLayout->addWidget(returnLabel);
+    retLayout->addWidget(this->reflectR);
+    retLayout->setAlignment(Qt::AlignLeft);
 
     QPushButton *calculateReturn = new QPushButton("Calculate Return");
     calculateReturn->setFixedWidth(400);
@@ -279,6 +315,7 @@ void MainWindow::InitUI(){
     calculateVolatility->setFixedWidth(400);
 
     QHBoxLayout *buttonsRV = new QHBoxLayout();
+
     buttonsRV->addWidget(calculateReturn);
     buttonsRV->addWidget(calculateVolatility);
     buttonsRV->setAlignment(Qt::AlignLeft);
@@ -288,8 +325,8 @@ void MainWindow::InitUI(){
     buttonsRVContainer->setLayout(buttonsRV);
     buttonsRVContainer->setFixedWidth(900);
 
-    returnAndVolatilityLayout->addWidget(returnLabel);
-    returnAndVolatilityLayout->addWidget(volatilityLabel);
+    returnAndVolatilityLayout->addLayout(retLayout);
+    returnAndVolatilityLayout->addLayout(volLayout);
     returnAndVolatilityLayout->addWidget(buttonsRVContainer, 0, Qt::AlignLeft);
 
     mainContainer->addLayout(chartsTablesLauout);
@@ -303,7 +340,8 @@ void MainWindow::InitUI(){
     connect(nextButton, &QPushButton::clicked, this, &MainWindow::nextCharts);
     connect(prevButton, &QPushButton::clicked, this, &MainWindow::prevCharts);
     connect(startAnalyse, &QPushButton::clicked, this, &MainWindow::signalMA);
-
+    connect(calculateReturn, &QPushButton::clicked, this, &MainWindow::reflectReturn);
+    connect(calculateVolatility, &QPushButton::clicked, this, &MainWindow::reflectVolatility);
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -315,6 +353,9 @@ MainWindow::MainWindow(QWidget *parent)
     InitUI();
     this->MA.init(this->candles);
     UpdateChart();
+
+    this->resultR = this->vol.returnCalculation(this->candles);
+    this->resultV = this->vol.calculateVolatility();
 }
 
 MainWindow::~MainWindow()

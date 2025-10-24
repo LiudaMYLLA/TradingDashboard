@@ -39,13 +39,16 @@ else()
     else()
         add_executable(TradingDashboard
             ${PROJECT_SOURCES}
-            Candle.h
+            candle.h
             data.csv
             dataloader.h dataloader.cpp
             orderbook.json
             order.h
             orderbook.h orderbook.cpp
             strategyma.h strategyma.cpp
+            returnCalc.h returnCalc.cpp
+            volatilityCalc.h volatilityCalc.cpp
+            metricslogger.h metricslogger.cpp
         )
     endif()
 endif()

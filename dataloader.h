@@ -1,6 +1,6 @@
 #ifndef DATALOADER_H
 #define DATALOADER_H
-#include "Candle.h"
+#include "candle.h"
 #include <iostream>
 #include <string>
 #include <vector>

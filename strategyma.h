@@ -1,7 +1,7 @@
 #ifndef STRATEGYMA_H
 #define STRATEGYMA_H
 
-#include "Candle.h"
+#include "candle.h"
 
 #include <deque>
 #include <vector>
