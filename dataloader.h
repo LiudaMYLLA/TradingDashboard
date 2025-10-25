@@ -28,6 +28,7 @@ public:
 // sub-types>:
 // 1) ofstream (out: writing only);
 // 2) ifstream (in: reading only);
+// 2) fstream
 // 3) stringstream ss(line);
 
 // 3

@@ -39,6 +39,7 @@ void MainWindow::reflectReturn(){
     this->reflectR->setText("data for 3 last candles: " + QString::number(last)+ ", "+
         QString::number(prevLast)+ ", "+
         QString::number(prevPrevLast));
+    this->metricsL.logAverageReturn(data);
 }
 
 void MainWindow::reflectVolatility(){
@@ -46,6 +47,7 @@ void MainWindow::reflectVolatility(){
     double data = this->resultV;
     this->reflectV->setText(QString::number(data));
     // Logic for adding the data to the metrix.txt
+    this->metricsL.logVolatility(data);
 }
 
 void MainWindow::nextCharts(){
@@ -217,7 +219,7 @@ void MainWindow::InitUI(){
     // Building final chart
     this->chartView = new QtCharts::QChartView(chart);
     this->chartView->setDragMode(QGraphicsView::ScrollHandDrag);
-    //chartView->setFixedSize(800,800);
+    //chartView->setFixedSize(1700,1000);
     // HERE IS EVERYTHING FOR CHARTS: END
 
     QWidget *container = new QWidget();

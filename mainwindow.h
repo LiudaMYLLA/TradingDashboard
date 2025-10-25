@@ -4,6 +4,7 @@
 #include "candle.h"
 #include "strategyma.h"
 #include "volatilityCalc.h"
+#include "metricslogger.h"
 
 #include <QMainWindow>
 #include <vector>
@@ -46,6 +47,7 @@ private:
     std::vector<Candle> candles;
     strategyMA MA;
     volatilityCalc vol;
+    metricsLogger metricsL;
 
     int current_index = 0;
     int amount_per_one = 7;

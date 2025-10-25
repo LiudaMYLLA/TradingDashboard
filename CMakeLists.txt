@@ -49,6 +49,7 @@ else()
             returnCalc.h returnCalc.cpp
             volatilityCalc.h volatilityCalc.cpp
             metricslogger.h metricslogger.cpp
+            metrics.txt
         )
     endif()
 endif()
